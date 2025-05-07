@@ -14,6 +14,8 @@
 typedef struct {
     Mat *a;
     int grain;
+    int thread_index;
+    int number_threads;
 } ThreadArgs;
 
 pthread_mutex_t lock;
@@ -58,55 +60,48 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
         // current i and j for the thread to start swapping at
         current_i = i;
         current_j = j;
-        // j += args->grain;
-        // if (j<=n-1){ // overflow
-        //     i += j/n; // how many rows to 
-        // }
 
-        // while( j > n - 1){
-        //     i += 1;
-        //     j -= n;
-        // }                   
+                // incrementng rowwise
+        // while remaining jump is more than the avalable spots left of the diagonal
+        int remaining_jump = args->grain; //some amount
+        while (remaining_jump > n - j - 1){
+            // first subtract remaining dist from j to end of row
+            int dist_from_j_to_n = n - j - 1;
+            remaining_jump -= dist_from_j_to_n;
 
-        // if(j>n-1){ // check if moving to next row
-        //     i+=j/n; // how many rows to move down
-        //     int old_j = j;
-        //     j=i; // set j = to diagonal
-        //     j+=old_j%n; // add remainder to j to find out where to begin for next thread
-        // }
-
-        // while grain > 0:
-        //     grain -= 1
-        //     if i == n - 1:
-        //         break
-        //     if j == n - 1:
-        //         i += 1
-        //         j = i + 1
-        //         continue
-        //     j += 1
-
-        // printf("current i: %d, current j: %d\n", i, current_j);
+            // then jump to next i
+            i += 1;
+            if (i > n - 1){
+                // pthread_mutex_unlock(&lock);
+                break;
+            }
+            j = i;
+        }
+        j += remaining_jump;
+        // printf("i is %d, j is %d\n", i, j);
         
-        // incremental solution for finding next index for next thread to work on
-        int remaining_increments = args->grain;
-        if (i > n -2 ){ // if on last row, done transposing
+       
+        if (current_i > n - 2 ){ // if on last row, done transposing
             // printf("i is %d, n is %d\n", i, n);
             pthread_mutex_unlock(&lock);
             break;
         }
-        while(remaining_increments > 0){
-            j += 1;
-            remaining_increments -= 1;
-            if (j > n- 1){
-                i += 1;
-                j= i + 1;
-            }
-            // printf("j: %d\n", j);
-        }
-        // printf("i: %d, j: %d\n", i, j);
-        // printf("after i: %d, after j: %d\n", i, j);
-
         pthread_mutex_unlock(&lock);
+        // incremental solution for finding next index for next thread to work on
+        // int remaining_increments = args->grain;
+        // while(remaining_increments > 0){
+        //     j += 1;
+        //     remaining_increments -= 1;
+        //     if (j > n- 1){
+        //         i += 1;
+        //         j= i + 1;
+        //     }
+        //     // printf("j: %d\n", j);
+        // }
+        // // printf("i: %d, j: %d\n", i, j);
+        // // printf("after i: %d, after j: %d\n", i, j);
+
+        // pthread_mutex_unlock(&lock);
         // for(int current_j=0; j<args->grain; j++){ // 
         //     // use row major 
             
@@ -142,6 +137,18 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
             // }
         // }
         
+    
+
+
+
+
+        // PSEUDOCODE FOR NO MUTEX
+
+        // get grain size, number of threads, and starting index
+        // set current starting index to starting index
+        // while i is less than n-1:
+            // do a grain amount of work while i is less than n-1
+            // jump to the next starting index by adding grain * number threads to the current starting index
     }
     return NULL;
 }
@@ -157,6 +164,7 @@ void mat_squaretransp_parallel(Mat *mat, unsigned int grain, unsigned int thr){
         // args to pass into thread function: struct of: grain, matrix,
         args[i].a=mat;
         args[i].grain=grain;
+        args[i].thread_index=i;
         //create threads
         // printf("Creating thread %d\n", i);
         pthread_create(&thread[i], NULL, ith_thread, &args[i]);
