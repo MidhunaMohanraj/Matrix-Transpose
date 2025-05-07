@@ -54,10 +54,10 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
         int current_j;
         int n = args->a->n;
         pthread_mutex_lock(&lock);
-        int overflow = 0;
+        // int overflow = 0;
         current_i = i;
         current_j = j;
-        j += args->grain;
+        // j += args->grain;
         // if (j<=n-1){ // overflow
         //     i += j/n; // how many rows to 
         // }
@@ -74,39 +74,74 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
         //     j+=old_j%n; // add remainder to j to find out where to begin for next thread
         // }
 
+        // while grain > 0:
+        //     grain -= 1
+        //     if i == n - 1:
+        //         break
+        //     if j == n - 1:
+        //         i += 1
+        //         j = i + 1
+        //         continue
+        //     j += 1
 
+        // printf("current i: %d, current j: %d\n", i, current_j);
+        
         // incremental solution for finding next index for next thread to work on
         int remaining_increments = args->grain;
-        if (i == n - 1){
-            return;
+        if (i > n -2 ){ // if on last row, done transposing
+            // printf("i is %d, n is %d\n", i, n);
+            pthread_mutex_unlock(&lock);
+            break;
         }
-        while (remaining_increments > 0){
+        while(remaining_increments > 0){
             j += 1;
             remaining_increments -= 1;
             if (j > n- 1){
                 i += 1;
                 j= i + 1;
             }
+            // printf("j: %d\n", j);
         }
-        
+        // printf("i: %d, j: %d\n", i, j);
+        // printf("after i: %d, after j: %d\n", i, j);
 
         pthread_mutex_unlock(&lock);
-        for(int current_j=0; j<args->grain; j++){ // 
-            // use row major 
+        // for(int current_j=0; j<args->grain; j++){ // 
+        //     // use row major 
             
-        }
+        // }
 
         int remaining_work = args->grain;
         // use current i j
         while (remaining_work > 0){
-            j += 1;
+            int temp = args->a->ptr[current_i*n + current_j];
+            // printf("swapping %d and %d\n", current_i, current_j);
+            args->a->ptr[current_i*n + current_j] = args->a->ptr[current_j*n + current_i];
+            args->a->ptr[current_j*n + current_i] = temp;
+            current_j += 1;
             remaining_work -= 1;
-            if (j > n - 1){
-                i += 1;
-                j= i + 1;
+            if (current_j > n - 1){
+                current_i += 1;
+                current_j= current_i + 1;
             }
         }
+        // i and j should now be updated for the next thread
+        // swap grain # of elements
+        for(int g = 0; g< args->grain; g++){
+            // swap i and j
+            // for(int x = current_i;x<n; x++){
+            //     for (int y = current_j; y < n; y++){
+            //         //swap mat [x][y] and mat[y][x]
+            //         int temp = args->a->ptr[x*n + y];
+            //         printf("temp is %d\n", temp);
+            //         args->a->ptr[x*n + y] = args->a->ptr[y*n + x];
+            //         args->a->ptr[y*n + x] = temp;
+            //     }
+            // }
+        }
+        
     }
+    return NULL;
 }
 
 void mat_squaretransp_parallel(Mat *mat, unsigned int grain, unsigned int thr){
@@ -119,12 +154,12 @@ void mat_squaretransp_parallel(Mat *mat, unsigned int grain, unsigned int thr){
         // args to pass into thread function: struct of: grain, matrix,
         args[i].a=mat;
         args[i].grain=grain;
-
-        //create
-    
-       
-       
-        pthread_create(&thread[i], NULL, ith_thread, NULL);
+        //create threads
+        printf("Creating thread %d\n", i);
+        pthread_create(&thread[i], NULL, ith_thread, &args[i]);
+    }
+    for (int i=0; i < thr; i++){
+        pthread_join(thread[i], NULL); //join each thread we created
     }
 
 
@@ -141,5 +176,5 @@ void mat_squaretransp_parallel(Mat *mat, unsigned int grain, unsigned int thr){
     //<<<<<<<< DELETE UP TO THIS POINT
 
     
-    return NULL;
+    return;
 }
