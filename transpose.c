@@ -55,6 +55,7 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
         int n = args->a->n;
         pthread_mutex_lock(&lock);
         // int overflow = 0;
+        // current i and j for the thread to start swapping at
         current_i = i;
         current_j = j;
         // j += args->grain;
@@ -110,10 +111,11 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
         //     // use row major 
             
         // }
-
+    
         int remaining_work = args->grain;
         // use current i j
-        while (remaining_work > 0){
+        // swap grain # of elements
+        while (remaining_work > 0 && current_i != n - 1){
             int temp = args->a->ptr[current_i*n + current_j];
             // printf("swapping %d and %d\n", current_i, current_j);
             args->a->ptr[current_i*n + current_j] = args->a->ptr[current_j*n + current_i];
@@ -127,7 +129,7 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
         }
         // i and j should now be updated for the next thread
         // swap grain # of elements
-        for(int g = 0; g< args->grain; g++){
+        // for(int g = 0; g< args->grain; g++){
             // swap i and j
             // for(int x = current_i;x<n; x++){
             //     for (int y = current_j; y < n; y++){
@@ -138,7 +140,7 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
             //         args->a->ptr[y*n + x] = temp;
             //     }
             // }
-        }
+        // }
         
     }
     return NULL;
@@ -147,18 +149,19 @@ void* ith_thread(void* arg){ // thread function to perform certain number grains
 void mat_squaretransp_parallel(Mat *mat, unsigned int grain, unsigned int thr){
     
     // YOUR CODE GOES HERE
+    int numThreads = (int)thr;
     pthread_mutex_init(&lock, NULL);
-    pthread_t thread[thr];
-    ThreadArgs args[thr];
-    for (int i=0; i < thr; i++){ // creates thr # of threads
+    pthread_t thread[numThreads];
+    ThreadArgs args[numThreads];
+    for (int i=0; i < numThreads; i++){ // creates thr # of threads
         // args to pass into thread function: struct of: grain, matrix,
         args[i].a=mat;
         args[i].grain=grain;
         //create threads
-        printf("Creating thread %d\n", i);
+        // printf("Creating thread %d\n", i);
         pthread_create(&thread[i], NULL, ith_thread, &args[i]);
     }
-    for (int i=0; i < thr; i++){
+    for (int i=0; i < numThreads; i++){
         pthread_join(thread[i], NULL); //join each thread we created
     }
 
