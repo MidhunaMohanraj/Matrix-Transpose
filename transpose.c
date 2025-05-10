@@ -1,9 +1,8 @@
-/**
- ** SUBMIT ONLY THIS FILE
- ** NAME: .......
- ** UCI ID: .......
- **
- ** Use only standard libraries.
+/* SUBMIT ONLY THIS FILE */
+/* NAME: Eric Huang */ /* UCI ID: 59504944 */
+/* NAME: Midhuna Mohanraj */ /* UCI ID: 39922268 */
+/* NAME: Destin Wong */ /* UCI ID: 64848542 */
+ /* Use only standard libraries.
  ** See description in header file.
  **/
 
